@@ -8,7 +8,7 @@
  * (Topic `urlaubsplaner/cmd`); die Daten kommen aus den Entitäten
  * binary_sensor.urlaub_heute / binary_sensor.urlaub_morgen / sensor.naechster_urlaub.
  */
-const CARD_VERSION = "1.0.0";
+const CARD_VERSION = "1.0.1";
 console.info(`%c URLAUBSPLANER-CARD %c v${CARD_VERSION} `,
   "color:#06281a;background:#4cc38a;font-weight:700", "color:#4cc38a;background:#1f2630");
 
@@ -85,13 +85,14 @@ class UrlaubsplanerCard extends HTMLElement {
     const vorschau = Array.isArray(next.attributes.vorschau) ? next.attributes.vorschau : [];
     const editing = this._editId ? urlaube.find((u) => u.id === this._editId) : null;
 
-    const badge = (ent, label) => {
-      if (!ent) return "";
-      const on = ent.state === "on";
-      return `<div class="badge ${on ? "on" : ""}">
+    // Badges: bevorzugt aus den binary_sensors, sonst Fallback auf das vorschau-Attribut
+    const dayOn = (ent, idx) => {
+      if (ent) return ent.state === "on";
+      return !!(vorschau[idx] && vorschau[idx].urlaub);
+    };
+    const badge = (on, label) => `<div class="badge ${on ? "on" : ""}">
         <span class="b-label">${label}</span><span class="b-state">${on ? "Urlaub" : "—"}</span>
       </div>`;
-    };
 
     let nextHtml = "";
     if (c.show_next) {
@@ -126,8 +127,8 @@ class UrlaubsplanerCard extends HTMLElement {
       const rows = urlaube.map((u) => {
         const [cls, txt] = statusOf(u);
         const actions = c.allow_edit ? `
-          <ha-icon-button data-edit="${u.id}" title="Bearbeiten"><ha-icon icon="mdi:pencil"></ha-icon></ha-icon-button>
-          <ha-icon-button data-del="${u.id}" title="Löschen"><ha-icon icon="mdi:delete-outline"></ha-icon></ha-icon-button>` : "";
+          <button class="iconbtn" data-edit="${u.id}" title="Bearbeiten"><ha-icon icon="mdi:pencil"></ha-icon></button>
+          <button class="iconbtn danger" data-del="${u.id}" title="Löschen"><ha-icon icon="mdi:delete-outline"></ha-icon></button>` : "";
         return `<div class="row">
           <span class="pill ${cls}">${txt}</span>
           <div class="r-info"><div class="r-label">${u.label || "Urlaub"}</div>
@@ -151,19 +152,30 @@ class UrlaubsplanerCard extends HTMLElement {
           </div>
           <div class="f-msg" id="f-msg"></div>
           <div class="f-actions">
-            <mwc-button id="f-save" raised>Speichern</mwc-button>
-            <mwc-button id="f-cancel">Abbrechen</mwc-button>
+            <button class="btn ghost" id="f-cancel">Abbrechen</button>
+            <button class="btn" id="f-save">Speichern</button>
           </div>
         </div>`;
       } else {
-        formHtml = `<div class="addwrap"><mwc-button id="f-open" outlined>
-          <ha-icon icon="mdi:plus"></ha-icon>&nbsp;Urlaub eintragen</mwc-button></div>`;
+        formHtml = `<div class="addwrap"><button class="btn ghost" id="f-open">
+          <ha-icon icon="mdi:plus"></ha-icon>Urlaub eintragen</button></div>`;
       }
     }
 
     this.shadowRoot.innerHTML = `
       <style>
+        *{box-sizing:border-box}
         ha-card{padding:16px}
+        .btn{border:none;border-radius:8px;padding:9px 16px;font:inherit;font-size:.9rem;font-weight:600;
+             cursor:pointer;background:var(--primary-color);color:var(--text-primary-color,#fff);
+             display:inline-flex;align-items:center;gap:6px}
+        .btn:hover{filter:brightness(1.08)}
+        .btn.ghost{background:transparent;color:var(--primary-color);border:1px solid var(--primary-color);font-weight:500}
+        .btn.ghost:hover{background:rgba(127,127,127,.08);filter:none}
+        .iconbtn{border:none;background:transparent;cursor:pointer;padding:6px;border-radius:50%;
+                 color:var(--secondary-text-color);display:inline-flex;align-items:center}
+        .iconbtn:hover{background:rgba(127,127,127,.12);color:var(--primary-text-color)}
+        .iconbtn.danger:hover{color:var(--error-color)}
         .title{font-size:1.05rem;font-weight:500;margin-bottom:12px;display:flex;align-items:center;gap:8px}
         .badges{display:flex;gap:10px;margin-bottom:12px}
         .badge{flex:1;border-radius:10px;padding:8px 12px;background:var(--secondary-background-color);
@@ -198,7 +210,6 @@ class UrlaubsplanerCard extends HTMLElement {
         .r-label{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .r-range{font-size:.82rem;color:var(--secondary-text-color)}
         .r-actions{display:flex;flex:none}
-        .r-actions ha-icon-button{--mdc-icon-button-size:36px;color:var(--secondary-text-color)}
         .empty{color:var(--secondary-text-color);font-size:.88rem}
         .addwrap{margin-top:4px}
         .form{border:1px solid var(--divider-color);border-radius:10px;padding:12px;margin-top:8px;
@@ -214,7 +225,7 @@ class UrlaubsplanerCard extends HTMLElement {
       </style>
       <ha-card>
         ${c.title ? `<div class="title"><ha-icon icon="mdi:beach"></ha-icon>${c.title}</div>` : ""}
-        ${c.show_badges ? `<div class="badges">${badge(heute, "Heute")}${badge(morgen, "Morgen")}</div>` : ""}
+        ${c.show_badges ? `<div class="badges">${badge(dayOn(heute, 0), "Heute")}${badge(dayOn(morgen, 1), "Morgen")}</div>` : ""}
         ${nextHtml}${stripHtml}${listHtml}${formHtml}
       </ha-card>`;
 
