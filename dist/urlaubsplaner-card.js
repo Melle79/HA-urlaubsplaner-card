@@ -149,7 +149,9 @@ class UrlaubsplanerCard extends HTMLElement {
                  value="${editing ? (editing.label || "").replace(/"/g, "&quot;") : ""}">
           <div class="f-dates">
             <label>Von <input type="date" id="f-start" value="${editing ? editing.start : ""}"></label>
+            <label class="f-time">Abfahrt <input type="time" id="f-start-time" value="${editing ? (editing.start_time||"") : ""}"></label>
             <label>Bis <input type="date" id="f-end" value="${editing ? editing.end : ""}"></label>
+            <label class="f-time">Ankunft <input type="time" id="f-end-time" value="${editing ? (editing.end_time||"") : ""}"></label>
           </div>
           <div class="f-msg" id="f-msg"></div>
           <div class="f-actions">
