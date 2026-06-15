@@ -8,7 +8,7 @@
  * (Topic `urlaubsplaner/cmd`); die Daten kommen aus den Entitäten
  * binary_sensor.urlaub_heute / binary_sensor.urlaub_morgen / sensor.naechster_urlaub.
  */
-const CARD_VERSION = "1.0.2";
+const CARD_VERSION = "1.0.3";
 console.info(`%c URLAUBSPLANER-CARD %c v${CARD_VERSION} `,
   "color:#06281a;background:#4cc38a;font-weight:700", "color:#4cc38a;background:#1f2630");
 
@@ -216,11 +216,14 @@ class UrlaubsplanerCard extends HTMLElement {
         .form{border:1px solid var(--divider-color);border-radius:10px;padding:12px;margin-top:8px;
               display:flex;flex-direction:column;gap:10px}
         .f-title{font-weight:600;font-size:.92rem}
-        .form input{background:var(--secondary-background-color);border:1px solid var(--divider-color);
-              border-radius:8px;color:var(--primary-text-color);padding:8px 10px;font:inherit;font-size:.9rem;width:100%}
+        .form input,.form select{background:var(--secondary-background-color);border:1px solid var(--divider-color);
+              border-radius:8px;color:var(--primary-text-color);padding:8px 10px;font:inherit;font-size:.9rem;width:100%;
+              color-scheme:dark}
+        .form input[type=time]{color-scheme:dark}
         .f-dates{display:flex;flex-wrap:wrap;gap:10px}
-        .f-dates label{flex:1;display:flex;flex-direction:column;gap:4px;
+        .f-dates label{flex:1;min-width:120px;display:flex;flex-direction:column;gap:4px;
               font-size:.78rem;color:var(--secondary-text-color)}
+        .f-dates label.f-time{flex:0 1 130px}
         .f-msg{font-size:.82rem;color:var(--error-color);min-height:1em}
         .f-actions{display:flex;gap:8px;justify-content:flex-end}
       </style>
