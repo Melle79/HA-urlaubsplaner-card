@@ -8,7 +8,7 @@
  * (Topic `urlaubsplaner/cmd`); die Daten kommen aus den Entitäten
  * binary_sensor.urlaub_heute / binary_sensor.urlaub_morgen / sensor.naechster_urlaub.
  */
-const CARD_VERSION = "1.0.3";
+const CARD_VERSION = "1.0.4";
 console.info(`%c URLAUBSPLANER-CARD %c v${CARD_VERSION} `,
   "color:#06281a;background:#4cc38a;font-weight:700", "color:#4cc38a;background:#1f2630");
 
