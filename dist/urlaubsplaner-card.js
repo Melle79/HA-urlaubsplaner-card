@@ -8,7 +8,7 @@
  * (Topic `urlaubsplaner/cmd`); die Daten kommen aus den Entitäten
  * binary_sensor.urlaub_heute / binary_sensor.urlaub_morgen / sensor.naechster_urlaub.
  */
-const CARD_VERSION = "1.0.1";
+const CARD_VERSION = "1.0.2";
 console.info(`%c URLAUBSPLANER-CARD %c v${CARD_VERSION} `,
   "color:#06281a;background:#4cc38a;font-weight:700", "color:#4cc38a;background:#1f2630");
 
@@ -22,6 +22,7 @@ const DEFAULTS = {
   allow_edit: true,
 };
 
+function fmtTime(t) { return t ? ` · ${t} Uhr` : ""; }
 function fmtDate(iso) {
   if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso || "–";
   const [y, m, d] = iso.split("-");
@@ -99,8 +100,8 @@ class UrlaubsplanerCard extends HTMLElement {
       const a = next.attributes;
       if (a.beginn) {
         const when = a.aktuell_urlaub
-          ? `läuft noch bis ${fmtDate(a.ende)}`
-          : `${fmtDate(a.beginn)} – ${fmtDate(a.ende)} · in ${a.in_tagen} Tagen`;
+          ? `läuft noch bis ${fmtDate(a.ende)}${fmtTime(a.endzeit)}`
+          : `${fmtDate(a.beginn)}${fmtTime(a.startzeit)} – ${fmtDate(a.ende)}${fmtTime(a.endzeit)} · in ${a.in_tagen} Tagen`;
         nextHtml = `<div class="next ${a.aktuell_urlaub ? "running" : ""}">
           <ha-icon icon="mdi:airplane-takeoff"></ha-icon>
           <div><div class="n-label">${a.bezeichnung || "Urlaub"}</div>
@@ -132,7 +133,7 @@ class UrlaubsplanerCard extends HTMLElement {
         return `<div class="row">
           <span class="pill ${cls}">${txt}</span>
           <div class="r-info"><div class="r-label">${u.label || "Urlaub"}</div>
-          <div class="r-range">${fmtDate(u.start)} – ${fmtDate(u.end)}</div></div>
+          <div class="r-range">${fmtDate(u.start)}${fmtTime(u.start_time)} – ${fmtDate(u.end)}${fmtTime(u.end_time)}</div></div>
           <div class="r-actions">${actions}</div>
         </div>`;
       }).join("");
@@ -217,7 +218,7 @@ class UrlaubsplanerCard extends HTMLElement {
         .f-title{font-weight:600;font-size:.92rem}
         .form input{background:var(--secondary-background-color);border:1px solid var(--divider-color);
               border-radius:8px;color:var(--primary-text-color);padding:8px 10px;font:inherit;font-size:.9rem;width:100%}
-        .f-dates{display:flex;gap:10px}
+        .f-dates{display:flex;flex-wrap:wrap;gap:10px}
         .f-dates label{flex:1;display:flex;flex-direction:column;gap:4px;
               font-size:.78rem;color:var(--secondary-text-color)}
         .f-msg{font-size:.82rem;color:var(--error-color);min-height:1em}
@@ -250,10 +251,12 @@ class UrlaubsplanerCard extends HTMLElement {
     if (save) save.addEventListener("click", () => {
       const start = $("#f-start").value, end = $("#f-end").value;
       const label = $("#f-label").value.trim();
+      const start_time = $("#f-start-time") ? $("#f-start-time").value : "";
+      const end_time = $("#f-end-time") ? $("#f-end-time").value : "";
       if (!start || !end) { $("#f-msg").textContent = "Bitte Von- und Bis-Datum angeben."; return; }
       if (end < start) { $("#f-msg").textContent = "Das Ende darf nicht vor dem Beginn liegen."; return; }
-      if (this._editId) this._cmd({ action: "update", id: this._editId, start, end, label });
-      else this._cmd({ action: "add", start, end, label });
+      if (this._editId) this._cmd({ action: "update", id: this._editId, start, start_time, end, end_time, label });
+      else this._cmd({ action: "add", start, start_time, end, end_time, label });
       this._formOpen = false; this._editId = null; this._sig = null;
       this.hass = this._hass;
     });
