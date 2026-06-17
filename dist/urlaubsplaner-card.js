@@ -8,7 +8,7 @@
  * (Topic `urlaubsplaner/cmd`); die Daten kommen aus den Entitäten
  * binary_sensor.urlaub_heute / binary_sensor.urlaub_morgen / sensor.naechster_urlaub.
  */
-const CARD_VERSION = "1.0.5";
+const CARD_VERSION = "1.0.6";
 console.info(`%c URLAUBSPLANER-CARD %c v${CARD_VERSION} `,
   "color:#06281a;background:#4cc38a;font-weight:700", "color:#4cc38a;background:#1f2630");
 
@@ -50,17 +50,18 @@ class UrlaubsplanerCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    const heute = hass.states["binary_sensor.urlaub_heute"];
-    const morgen = hass.states["binary_sensor.urlaub_morgen"];
+    const heute  = hass.states["binary_sensor.urlaub_heute"];
+    const morgen  = hass.states["binary_sensor.urlaub_morgen"];
+    const vorbei  = hass.states["binary_sensor.urlaub_gerade_vorbei"];
     const next = hass.states["sensor.naechster_urlaub"];
     const sig = JSON.stringify([
-      heute && heute.state, morgen && morgen.state,
+      heute && heute.state, morgen && morgen.state, vorbei && vorbei.state,
       next && next.state, next && next.attributes.urlaube,
       this._formOpen, this._editId,
     ]);
     if (sig === this._sig) return;
     this._sig = sig;
-    this._render(heute, morgen, next);
+    this._render(heute, morgen, vorbei, next);
   }
 
   _cmd(payload) {
@@ -70,7 +71,7 @@ class UrlaubsplanerCard extends HTMLElement {
     });
   }
 
-  _render(heute, morgen, next) {
+  _render(heute, morgen, vorbei, next) {
     const c = this._config;
     if (!this.shadowRoot) this.attachShadow({ mode: "open" });
 
@@ -91,7 +92,7 @@ class UrlaubsplanerCard extends HTMLElement {
       if (ent) return ent.state === "on";
       return !!(vorschau[idx] && vorschau[idx].urlaub);
     };
-    const badge = (on, label) => `<div class="badge ${on ? "on" : ""}">
+    const badge = (on, label, ended=false) => `<div class="badge ${on ? "on" : ended ? "ended" : ""}">
         <span class="b-label">${label}</span><span class="b-state">${on ? "Urlaub" : "—"}</span>
       </div>`;
 
@@ -184,6 +185,8 @@ class UrlaubsplanerCard extends HTMLElement {
         .badge{flex:1;border-radius:10px;padding:8px 12px;background:var(--secondary-background-color);
                display:flex;flex-direction:column;gap:2px}
         .badge.on{background:rgba(76,195,138,.18)}
+        .badge.ended{background:rgba(232,162,61,.18)}
+        .badge.ended .b-state{color:#c8891a}
         .b-label{font-size:.75rem;color:var(--secondary-text-color)}
         .b-state{font-weight:600}
         .badge.on .b-state{color:#2e9e6b}
@@ -231,7 +234,7 @@ class UrlaubsplanerCard extends HTMLElement {
       </style>
       <ha-card>
         ${c.title ? `<div class="title"><ha-icon icon="mdi:beach"></ha-icon>${c.title}</div>` : ""}
-        ${c.show_badges ? `<div class="badges">${badge(dayOn(heute, 0), "Heute")}${badge(dayOn(morgen, 1), "Morgen")}</div>` : ""}
+        ${c.show_badges ? `<div class="badges">${badge(dayOn(heute, 0), "Heute")}${badge(dayOn(morgen, 1), "Morgen")}${badge(false, "Gerade vorbei", vorbei && vorbei.state === "on")}</div>` : ""}
         ${nextHtml}${stripHtml}${listHtml}${formHtml}
       </ha-card>`;
 
