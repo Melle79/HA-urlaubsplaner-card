@@ -8,7 +8,7 @@
  * (Topic `urlaubsplaner/cmd`); die Daten kommen aus den Entitäten
  * binary_sensor.urlaub_heute / binary_sensor.urlaub_morgen / sensor.naechster_urlaub.
  */
-const CARD_VERSION = "1.0.6";
+const CARD_VERSION = "1.0.7";
 console.info(`%c URLAUBSPLANER-CARD %c v${CARD_VERSION} `,
   "color:#06281a;background:#4cc38a;font-weight:700", "color:#4cc38a;background:#1f2630");
 
@@ -248,7 +248,21 @@ class UrlaubsplanerCard extends HTMLElement {
       this._formOpen = false; this._editId = null; this._sig = null; this.hass = this._hass;
     });
 
-    const startInput = $("#f-start");
+    const triggerSel = $("#f-trigger");
+      const actionSel = $("#f-action");
+      const ACTION_LABELS = {
+        heute:  {ein:"Im Urlaub einschalten",  aus:"Im Urlaub ausschalten"},
+        morgen: {ein:"Am Vortag einschalten",   aus:"Am Vortag ausschalten"},
+        vorbei: {ein:"Nach Urlaub einschalten", aus:"Nach Urlaub ausschalten"},
+      };
+      const updateActionLabels = () => {
+        if (!triggerSel || !actionSel) return;
+        const labels = ACTION_LABELS[triggerSel.value] || ACTION_LABELS.heute;
+        actionSel.querySelector('[value=ein]').textContent = labels.ein;
+        actionSel.querySelector('[value=aus]').textContent = labels.aus;
+      };
+      if (triggerSel) { triggerSel.addEventListener("change", updateActionLabels); updateActionLabels(); }
+      const startInput = $("#f-start");
     if (startInput) startInput.addEventListener("change", () => {
       const end = $("#f-end");
       end.min = startInput.value;
